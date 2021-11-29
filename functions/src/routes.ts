@@ -45,14 +45,10 @@ export const userGet = async (request: any, response: any): Promise<any> => {
     if (!userId) {
       throw new Error("userId is manadate field");
     }
-    const [data, err] = await handle(readDocFromCollection("users", userId));
-    if (data) {
-      logger.info("Data: ", data);
-      return response.status(200).json(data);
-    }
-    logger.info("Error: ", err);
-    errObj.err = err;
-    errObj.error = `user ${userId} doesn't exist`;
+    const [data] = await handle(readDocFromCollection("users", userId));
+
+    logger.info("Data: ", data);
+    return response.status(200).json(data);
   } catch (err) {
     errObj.error = "Service Request error";
     errObj.err = { message: (err as Error).message };
