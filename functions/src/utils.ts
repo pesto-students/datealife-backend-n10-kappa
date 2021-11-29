@@ -1,7 +1,7 @@
 const { db, FieldValue, logger } = require("./db");
 
 export interface UserInfo {
-  id: string;
+  uid: string;
   fullName: string;
   age: string;
   gender: string;
@@ -18,8 +18,8 @@ interface InvitationInfo {
 }
 
 export interface ListingData {
-  [id: string]: {
-    id: string;
+  [uid: string]: {
+    uid: string;
     fullName: string;
     profilePicture: string;
     invitationInfo?: InvitationInfo;
@@ -78,7 +78,7 @@ const extendQueryForGender = async (query: any, gender: string, orientation: str
 };
 
 export type QueryParams = {
-  id: string;
+  uid: string;
   orientation: string;
   gender: string;
   interests: string[] | string;
@@ -86,7 +86,7 @@ export type QueryParams = {
 };
 
 const getMatchUserParams = (queryParams: QueryParams) => {
-  const { gender, orientation, id } = queryParams;
+  const { gender, orientation, uid } = queryParams;
 
   let { interests } = queryParams;
 
@@ -96,8 +96,8 @@ const getMatchUserParams = (queryParams: QueryParams) => {
 
   logger.info(gender, orientation, interests);
 
-  if (!id && !gender && !orientation) {
-    throw new Error("id, gender, orientation, startAt, endAt are manadate field");
+  if (!uid && !gender && !orientation) {
+    throw new Error("uid, gender, orientation, startAt, endAt are manadate field");
   }
 
   return {
@@ -107,8 +107,8 @@ const getMatchUserParams = (queryParams: QueryParams) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-// const extendQueryForPagination = async (query: any, { itemsPerRequest, id }: QueryParams): Promise<any> => {
-//   const lastInstance = await db.collection(`users/${id}/listing`).doc("last-instance").get();
+// const extendQueryForPagination = async (query: any, { itemsPerRequest, uid }: QueryParams): Promise<any> => {
+//   const lastInstance = await db.collection(`users/${uid}/listing`).doc("last-instance").get();
 //   logger.info("itemsPerRequest", itemsPerRequest, lastInstance);
 //   if (lastInstance) {
 //     logger.info("lastInstance.get()", lastInstance.data());
@@ -118,18 +118,18 @@ const getMatchUserParams = (queryParams: QueryParams) => {
 // };
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const updateLastInstance = async (lastInstance: any, { id }: QueryParams): Promise<any> => {
-  return await db.collection(`users/${id}/listing`).doc("last-instance").set(lastInstance);
+const updateLastInstance = async (lastInstance: any, { uid }: QueryParams): Promise<any> => {
+  return await db.collection(`users/${uid}/listing`).doc("last-instance").set(lastInstance);
 };
 
 export const readMatchUserFromCollection = async (collectionName: string, queryParams: QueryParams): Promise<any> => {
   const users: UserInfo[] = [];
-  const { id, gender, orientation, interests } = getMatchUserParams(queryParams);
-  const queryWithId = await db.collection(collectionName).where("id", "!=", id);
+  const { uid, gender, orientation, interests } = getMatchUserParams(queryParams);
+  const queryWithId = await db.collection(collectionName).where("uid", "!=", uid);
   const queryWithGender = await extendQueryForGender(queryWithId, gender, orientation);
   const queryWithInterests = await queryWithGender
     .where("interests", "array-contains-any", interests)
-    .orderBy("id")
+    .orderBy("uid")
     .orderBy("interests");
   // const queryWithPagination = await extendQueryForPagination(queryWithInterests, queryParams);
   const snapshot = await queryWithInterests.get();
