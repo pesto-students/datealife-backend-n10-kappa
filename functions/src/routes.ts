@@ -15,21 +15,22 @@ export const userPost = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
     const reqObj = request.body as UserInfo;
-    const { id } = reqObj;
+    const { uid } = reqObj;
     logger.info("Request Body", reqObj);
 
-    if (!id) {
-      throw new Error("user id is manadate field");
+    if (!uid) {
+      throw new Error("user uid is manadate field");
     }
-    const [data, err] = await handle(addDocToCollection("users", id, reqObj));
+    const [data, err] = await handle(addDocToCollection("users", uid, reqObj));
     if (data) {
-      logger.info(`Data for user : ${id}`, data);
+      logger.info(`Data for user : ${uid}`, data);
       return response.status(200).json(reqObj);
     }
     logger.info("Error: ", err);
     errObj.err = err;
     errObj.error = "unable to store";
   } catch (err) {
+    logger.info("Error: ", err);
     errObj.error = "Service Request error";
     errObj.err = { message: (err as Error).message };
   }
@@ -45,14 +46,10 @@ export const userGet = async (request: any, response: any): Promise<any> => {
     if (!userId) {
       throw new Error("userId is manadate field");
     }
-    const [data, err] = await handle(readDocFromCollection("users", userId));
-    if (data) {
-      logger.info("Data: ", data);
-      return response.status(200).json(data);
-    }
-    logger.info("Error: ", err);
-    errObj.err = err;
-    errObj.error = `user ${userId} doesn't exist`;
+    const [data] = await handle(readDocFromCollection("users", userId));
+
+    logger.info("Data: ", data);
+    return response.status(200).json(data);
   } catch (err) {
     errObj.error = "Service Request error";
     errObj.err = { message: (err as Error).message };
@@ -107,9 +104,9 @@ export const listingTypePost =
     try {
       const reqObj = request.body;
       const { userId } = request.params;
-      const { id } = reqObj;
+      const { uid } = reqObj;
 
-      if (!userId || !id) {
+      if (!userId || !uid) {
         throw new Error("userId and Liked userId are manadate field");
       }
 
@@ -120,7 +117,7 @@ export const listingTypePost =
       const collectionName = `users/${userId}/listing`;
 
       const docData: ListingData = {
-        [id]: {
+        [uid]: {
           ...reqObj,
         },
       };
@@ -204,12 +201,12 @@ export const listingTypeDelete =
 export const matchMakingGet = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
-    const { id } = request.query;
+    const { uid } = request.query;
 
     const [data, err] = await handle(readMatchUserFromCollection("users", request.query));
 
     if (data) {
-      logger.info(`user ${id} has below matches`, data);
+      logger.info(`user ${uid} has below matches`, data);
       return response.status(200).json(data);
     }
     logger.info("Error: ", err);
