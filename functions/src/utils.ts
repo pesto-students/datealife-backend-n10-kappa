@@ -3,7 +3,7 @@ const { db, FieldValue, logger } = require("./db");
 export interface UserInfo {
   uid: string;
   fullName: string;
-  age: string;
+  dob: string;
   gender: string;
   orientation: string;
   ProPicture: string;
@@ -26,8 +26,8 @@ export interface ListingData {
   };
 }
 
-export const addDocToCollection = (collectionName: string, docId: string, data: UserInfo | ListingData): any => {
-  return db.collection(collectionName).doc(docId).set(data, { merge: true });
+export const addDocToCollection = async (collectionName: string, docId: string, data: UserInfo | ListingData): Promise<any> => {
+  return await db.collection(collectionName).doc(docId).set(data, { merge: true });
 };
 
 export const readDocFromCollection = async (collectionName: string, docId: string): Promise<any> => {
@@ -67,7 +67,7 @@ const extendQueryForGender = async (query: any, gender: string, orientation: str
       }
       return await query.where("gender", "==", gender);
     }
-    case "gay_lesbian": {
+    case "gay/lesbian": {
       return await query.where("gender", "==", gender);
     }
     case "bisexual":
