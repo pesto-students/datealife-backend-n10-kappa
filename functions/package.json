@@ -2,8 +2,10 @@
   "name": "functions",
   "scripts": {
     "lint": "eslint --ext .js,.ts .",
-    "build": "tsc -w",
+    "build": "tsc",
+    "build:dev": "tsc -w",
     "serve": "npm run build && firebase emulators:start",
+    "serve:dev": "npm run build:dev && firebase emulators:start",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
