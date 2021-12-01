@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 import { functionsRunWith } from "./db";
-import { listingTypePost, listingTypeGet, listingTypeDelete, matchMakingGet, userDelete, userGet, userPost } from "./routes";
+import { listingTypePost, listingTypeGet, listingTypeDelete, matchMakingGet, userDelete, userGet, userPost, learningsGet, learningsGetItem } from "./routes";
 
 const app = express();
 
@@ -29,6 +29,8 @@ app.post("/user/:userId/invites", listingTypePost("invites"));
 app.delete("/user/:userId/invites/:userToBeRemoved", listingTypeDelete("invites"));
 
 app.get("/match-making", matchMakingGet);
+app.get("/learnings", learningsGet);
+app.get("/learnings/:learningId", learningsGetItem);
 
 // export app to firebase
 export const api = functionsRunWith({
