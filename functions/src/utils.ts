@@ -11,6 +11,15 @@ export interface UserInfo {
   interests: string[];
 }
 
+export interface learning {
+  id: string;
+  author: string;
+  title: string;
+  description: string;
+  gender: string;
+  imgUrl: string;
+}
+
 interface InvitationInfo {
   bookingType: string;
   proposedDate: string;
@@ -149,4 +158,8 @@ export const readMatchUserFromCollection = async (collectionName: string, queryP
   await updateLastInstance(lastInstance, queryParams);
 
   return users;
+};
+
+export const getDocsFromCollection = async (collectionName: string): Promise<any> => {
+  return db.collection(collectionName).get();
 };

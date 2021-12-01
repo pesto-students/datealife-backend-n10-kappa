@@ -9,7 +9,9 @@ import {
   readMatchUserFromCollection,
   isExistingUser,
   UserInfo,
+  getDocsFromCollection
 } from "./utils";
+import {learning} from "./utils";
 
 export const userPost = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
@@ -217,5 +219,53 @@ export const matchMakingGet = async (request: any, response: any): Promise<any> 
     errObj.err = { message: (err as Error).message };
   }
 
+  return response.status(500).send(errObj);
+};
+
+export const learningsGet = async (request: any, response: any): Promise<any> => {
+  const errObj = { error: "", err: {} };
+  try {
+      const [data, err] = await handle(getDocsFromCollection("learning"));
+      if (data) {
+          const dataList: learning[] = [];
+          data.forEach((doc: any) => {
+              const dataObj = doc.data();
+              dataObj["id"] = doc.id;
+              dataList.push(dataObj);
+          });
+          logger.info("Data: ", dataList);
+          return response.status(200).json(dataList);
+      }
+      logger.info("Error: ", err);
+      errObj.err = err;
+      errObj.error = `Cannot fetch learnings`;
+  }
+  catch (err) {
+      errObj.error = "Service Request error";
+      errObj.err = { message: (err as Error).message };
+  }
+  return response.status(500).send(errObj);
+};
+
+export const learningsGetItem = async (request: any, response: any): Promise<any> => {
+  const errObj = { error: "", err: {} };
+  try {
+      const learningId = request.params.learningId;
+      if (!learningId) {
+          throw new Error("Learning Id is manadate field");
+      }
+      const [data, err] = await handle(readDocFromCollection("learning", learningId));
+      if (data) {
+          logger.info("Data: ", data);
+          return response.status(200).json(data);
+      }
+      logger.info("Error: ", err);
+      errObj.err = err;
+      errObj.error = `learning ${learningId} doesn't exist`;
+  }
+  catch (err) {
+      errObj.error = "Service Request error";
+      errObj.err = { message: (err as Error).message };
+  }
   return response.status(500).send(errObj);
 };
