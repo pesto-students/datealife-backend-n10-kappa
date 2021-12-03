@@ -9,9 +9,10 @@ import {
   readMatchUserFromCollection,
   isExistingUser,
   UserInfo,
-  getDocsFromCollection
+  getDocsFromCollection,
+  ListingTypeData,
 } from "./utils";
-import {learning} from "./utils";
+import { learning } from "./utils";
 
 export const userPost = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
@@ -118,7 +119,7 @@ export const listingTypePost =
 
       const collectionName = `users/${userId}/listing`;
 
-      const docData: ListingData = {
+      const docData: ListingTypeData = {
         [uid]: {
           ...reqObj,
         },
@@ -170,6 +171,35 @@ export const listingTypeGet =
     return response.status(500).send(errObj);
   };
 
+export const listingGet = async (request: any, response: any): Promise<any> => {
+  const errObj = { error: "", err: {} };
+  try {
+    const { userId } = request.params;
+    if (!userId) {
+      throw new Error("userId is a manadate field");
+    }
+    const [data, err] = await handle(getDocsFromCollection(`users/${userId}/listing`));
+    if (data) {
+      logger.info("Data1: ", data);
+      const dataList: ListingData = {};
+      data.forEach((doc: any) => {
+        const dataObj = doc.data();
+        logger.info("dataObj: ", dataObj, dataObj.id);
+        dataList[doc.id] = dataObj;
+      });
+      logger.info("Data: ", dataList);
+      return response.status(200).json(dataList);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `Cannot fetch learnings`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
+  }
+  return response.status(500).send(errObj);
+};
+
 export const listingTypeDelete =
   (listingType: string) =>
   async (request: any, response: any): Promise<any> => {
@@ -200,12 +230,13 @@ export const listingTypeDelete =
     return response.status(500).send(errObj);
   };
 
-export const matchMakingGet = async (request: any, response: any): Promise<any> => {
+export const matchMakingPost = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
-    const { uid } = request.query;
+    const reqObj = request.body;
+    const { uid } = reqObj;
 
-    const [data, err] = await handle(readMatchUserFromCollection("users", request.query));
+    const [data, err] = await handle(readMatchUserFromCollection("users", reqObj));
 
     if (data) {
       logger.info(`user ${uid} has below matches`, data);
@@ -225,24 +256,23 @@ export const matchMakingGet = async (request: any, response: any): Promise<any> 
 export const learningsGet = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
-      const [data, err] = await handle(getDocsFromCollection("learning"));
-      if (data) {
-          const dataList: learning[] = [];
-          data.forEach((doc: any) => {
-              const dataObj = doc.data();
-              dataObj["id"] = doc.id;
-              dataList.push(dataObj);
-          });
-          logger.info("Data: ", dataList);
-          return response.status(200).json(dataList);
-      }
-      logger.info("Error: ", err);
-      errObj.err = err;
-      errObj.error = `Cannot fetch learnings`;
-  }
-  catch (err) {
-      errObj.error = "Service Request error";
-      errObj.err = { message: (err as Error).message };
+    const [data, err] = await handle(getDocsFromCollection("learning"));
+    if (data) {
+      const dataList: learning[] = [];
+      data.forEach((doc: any) => {
+        const dataObj = doc.data();
+        dataObj["id"] = doc.id;
+        dataList.push(dataObj);
+      });
+      logger.info("Data: ", dataList);
+      return response.status(200).json(dataList);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `Cannot fetch learnings`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
   }
   return response.status(500).send(errObj);
 };
@@ -250,22 +280,21 @@ export const learningsGet = async (request: any, response: any): Promise<any> =>
 export const learningsGetItem = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
-      const learningId = request.params.learningId;
-      if (!learningId) {
-          throw new Error("Learning Id is manadate field");
-      }
-      const [data, err] = await handle(readDocFromCollection("learning", learningId));
-      if (data) {
-          logger.info("Data: ", data);
-          return response.status(200).json(data);
-      }
-      logger.info("Error: ", err);
-      errObj.err = err;
-      errObj.error = `learning ${learningId} doesn't exist`;
-  }
-  catch (err) {
-      errObj.error = "Service Request error";
-      errObj.err = { message: (err as Error).message };
+    const learningId = request.params.learningId;
+    if (!learningId) {
+      throw new Error("Learning Id is manadate field");
+    }
+    const [data, err] = await handle(readDocFromCollection("learning", learningId));
+    if (data) {
+      logger.info("Data: ", data);
+      return response.status(200).json(data);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `learning ${learningId} doesn't exist`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
   }
   return response.status(500).send(errObj);
 };

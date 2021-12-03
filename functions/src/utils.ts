@@ -26,7 +26,7 @@ interface InvitationInfo {
   requestAccepted: boolean;
 }
 
-export interface ListingData {
+export interface ListingTypeData {
   [uid: string]: {
     uid: string;
     fullName: string;
@@ -35,7 +35,15 @@ export interface ListingData {
   };
 }
 
-export const addDocToCollection = async (collectionName: string, docId: string, data: UserInfo | ListingData): Promise<any> => {
+export interface ListingData {
+  [listingType: string]: ListingTypeData;
+}
+
+export const addDocToCollection = async (
+  collectionName: string,
+  docId: string,
+  data: UserInfo | ListingTypeData
+): Promise<any> => {
   return await db.collection(collectionName).doc(docId).set(data, { merge: true });
 };
 
@@ -151,11 +159,6 @@ export const readMatchUserFromCollection = async (collectionName: string, queryP
   snapshot.forEach((doc: any) => {
     users.push(doc.data());
   });
-  const lastInstance = snapshot.docs[snapshot.docs.length - 1].data();
-
-  logger.info("users", users, snapshot.docs.length - 1);
-
-  await updateLastInstance(lastInstance, queryParams);
 
   return users;
 };
