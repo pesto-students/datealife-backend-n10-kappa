@@ -59,6 +59,12 @@ export const deleteFieldFromDoc = async (collectionName: string, docId: string, 
   });
 };
 
+export const readFieldFromDoc = async (collectionName: string, docId: string, fieldToRead: string): Promise<boolean> => {
+  const doc = await db.collection(collectionName).doc(docId).get();
+  const data = doc.empty ? {} : doc.data();
+  return !!data[fieldToRead];
+};
+
 export const handle = (promise: Promise<any>): any => {
   return promise
     .then((data: any) => [data, undefined])
@@ -123,22 +129,6 @@ const getMatchUserParams = (queryParams: QueryParams) => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-// const extendQueryForPagination = async (query: any, { itemsPerRequest, uid }: QueryParams): Promise<any> => {
-//   const lastInstance = await db.collection(`users/${uid}/listing`).doc("last-instance").get();
-//   logger.info("itemsPerRequest", itemsPerRequest, lastInstance);
-//   if (lastInstance) {
-//     logger.info("lastInstance.get()", lastInstance.data());
-//     await query.startAfter(lastInstance).limit(Number(itemsPerRequest));
-//   }
-//   return await query.limit(Number(itemsPerRequest));
-// };
-
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const updateLastInstance = async (lastInstance: any, { uid }: QueryParams): Promise<any> => {
-  return await db.collection(`users/${uid}/listing`).doc("last-instance").set(lastInstance);
-};
-
 export const readMatchUserFromCollection = async (collectionName: string, queryParams: QueryParams): Promise<any> => {
   const users: UserInfo[] = [];
   const { uid, gender, orientation, interests } = getMatchUserParams(queryParams);
@@ -148,7 +138,6 @@ export const readMatchUserFromCollection = async (collectionName: string, queryP
     .where("interests", "array-contains-any", interests)
     .orderBy("uid")
     .orderBy("interests");
-  // const queryWithPagination = await extendQueryForPagination(queryWithInterests, queryParams);
   const snapshot = await queryWithInterests.get();
 
   if (snapshot.empty) {

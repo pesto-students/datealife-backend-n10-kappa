@@ -11,6 +11,7 @@ import {
   UserInfo,
   getDocsFromCollection,
   ListingTypeData,
+  readFieldFromDoc,
 } from "./utils";
 import { learning } from "./utils";
 
@@ -100,6 +101,17 @@ export const userDelete = async (request: any, response: any): Promise<any> => {
   return response.status(500).send(errObj);
 };
 
+const handleLikedUserRecord = async (collectionName: string, userId: string) => {
+  await deleteFieldFromDoc(collectionName, "likes", userId);
+  const userIdData = await readDocFromCollection("users", userId);
+  const docData: ListingTypeData = {
+    [userId]: {
+      ...userIdData,
+    },
+  };
+  await addDocToCollection(collectionName, "matches", docData);
+};
+
 export const listingTypePost =
   (listingType: string) =>
   async (request: any, response: any): Promise<any> => {
@@ -107,9 +119,11 @@ export const listingTypePost =
     try {
       const reqObj = request.body;
       const { userId } = request.params;
-      const { uid } = reqObj;
+      const { selectedUser, invitationInfo = {} } = reqObj;
+      const { uid: selectedUserId } = selectedUser;
+      let isAMatch = false;
 
-      if (!userId || !uid) {
+      if (!userId || !selectedUserId) {
         throw new Error("userId and Liked userId are manadate field");
       }
 
@@ -117,11 +131,20 @@ export const listingTypePost =
         throw new Error("Invitation info is mandate for invites");
       }
 
+      if (listingType === "likes") {
+        const collectionName = `users/${selectedUserId}/listing`;
+        [isAMatch] = await handle(readFieldFromDoc(collectionName, "likes", userId));
+        logger.log("isAMatch", isAMatch);
+        listingType = isAMatch ? "matches" : listingType;
+        isAMatch && (await handleLikedUserRecord(collectionName, userId));
+      }
+
       const collectionName = `users/${userId}/listing`;
 
       const docData: ListingTypeData = {
-        [uid]: {
-          ...reqObj,
+        [selectedUserId]: {
+          ...selectedUser,
+          invitationInfo,
         },
       };
 
@@ -129,7 +152,7 @@ export const listingTypePost =
 
       if (data) {
         logger.info("Data: ", data);
-        return response.status(200).json(reqObj);
+        return response.status(200).json({ res: reqObj, isAMatch });
       }
       logger.info("Error: ", err);
       errObj.err = err;
