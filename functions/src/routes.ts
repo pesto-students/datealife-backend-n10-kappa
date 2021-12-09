@@ -133,7 +133,7 @@ export const listingTypePost =
 
       if (listingType === "likes") {
         const collectionName = `users/${selectedUserId}/listing`;
-        [isAMatch] = await handle(readFieldFromDoc(collectionName, "likes", userId));
+        isAMatch = await readFieldFromDoc(collectionName, "likes", userId);
         logger.log("isAMatch", isAMatch);
         listingType = isAMatch ? "matches" : listingType;
         isAMatch && (await handleLikedUserRecord(collectionName, userId));
@@ -141,18 +141,20 @@ export const listingTypePost =
 
       const collectionName = `users/${userId}/listing`;
 
+      const selectedData = {
+        ...selectedUser,
+        invitationInfo,
+      };
+
       const docData: ListingTypeData = {
-        [selectedUserId]: {
-          ...selectedUser,
-          invitationInfo,
-        },
+        [selectedUserId]: selectedData,
       };
 
       const [data, err] = await handle(addDocToCollection(collectionName, listingType, docData));
 
       if (data) {
         logger.info("Data: ", data);
-        return response.status(200).json({ res: reqObj, isAMatch });
+        return response.status(200).json({ res: selectedData, isAMatch });
       }
       logger.info("Error: ", err);
       errObj.err = err;
