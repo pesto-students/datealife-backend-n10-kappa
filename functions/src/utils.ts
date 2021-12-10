@@ -30,7 +30,7 @@ interface InvitationInfo {
   requestAccepted: boolean;
 }
 
-export interface ListingData {
+export interface ListingTypeData {
   [uid: string]: {
     uid: string;
     fullName: string;
@@ -39,8 +39,28 @@ export interface ListingData {
   };
 }
 
-export const addDocToCollection = async (collectionName: string, docId: string, data: UserInfo | ListingData): Promise<any> => {
-  return await db.collection(collectionName).doc(docId).set(data, { merge: true });
+export interface ListingData {
+  [listingType: string]: ListingTypeData;
+}
+
+export interface EmailOptions {
+  to: string;
+  from: string;
+  message: {
+    html: string;
+    subject: string;
+  };
+}
+
+export const addDocToCollection = async (
+  collectionName: string,
+  data: UserInfo | ListingTypeData | EmailOptions,
+  docId: string | null
+): Promise<any> => {
+  if (docId) {
+    return await db.collection(collectionName).doc(docId).set(data, { merge: true });
+  }
+  return await db.collection(collectionName).add(data);
 };
 
 export const readDocFromCollection = async (collectionName: string, docId: string): Promise<any> => {
@@ -53,6 +73,12 @@ export const deleteFieldFromDoc = async (collectionName: string, docId: string, 
   return doc.update({
     [fieldTobeRemoved]: FieldValue.delete(),
   });
+};
+
+export const readFieldFromDoc = async (collectionName: string, docId: string, fieldToRead: string): Promise<boolean> => {
+  const doc = await db.collection(collectionName)?.doc(docId)?.get();
+  const data = doc.empty ? {} : doc.data();
+  return !!data[fieldToRead];
 };
 
 export const handle = (promise: Promise<any>): any => {
@@ -119,22 +145,6 @@ const getMatchUserParams = (queryParams: QueryParams) => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-// const extendQueryForPagination = async (query: any, { itemsPerRequest, uid }: QueryParams): Promise<any> => {
-//   const lastInstance = await db.collection(`users/${uid}/listing`).doc("last-instance").get();
-//   logger.info("itemsPerRequest", itemsPerRequest, lastInstance);
-//   if (lastInstance) {
-//     logger.info("lastInstance.get()", lastInstance.data());
-//     await query.startAfter(lastInstance).limit(Number(itemsPerRequest));
-//   }
-//   return await query.limit(Number(itemsPerRequest));
-// };
-
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const updateLastInstance = async (lastInstance: any, { uid }: QueryParams): Promise<any> => {
-  return await db.collection(`users/${uid}/listing`).doc("last-instance").set(lastInstance);
-};
-
 export const readMatchUserFromCollection = async (collectionName: string, queryParams: QueryParams): Promise<any> => {
   const users: UserInfo[] = [];
   const { uid, gender, orientation, interests } = getMatchUserParams(queryParams);
@@ -144,7 +154,6 @@ export const readMatchUserFromCollection = async (collectionName: string, queryP
     .where("interests", "array-contains-any", interests)
     .orderBy("uid")
     .orderBy("interests");
-  // const queryWithPagination = await extendQueryForPagination(queryWithInterests, queryParams);
   const snapshot = await queryWithInterests.get();
 
   if (snapshot.empty) {
@@ -155,11 +164,6 @@ export const readMatchUserFromCollection = async (collectionName: string, queryP
   snapshot.forEach((doc: any) => {
     users.push(doc.data());
   });
-  const lastInstance = snapshot.docs[snapshot.docs.length - 1].data();
-
-  logger.info("users", users, snapshot.docs.length - 1);
-
-  await updateLastInstance(lastInstance, queryParams);
 
   return users;
 };

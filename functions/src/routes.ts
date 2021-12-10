@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { firestoreDelete, logger } from "./db";
+import { firestoreDelete, logger, useremail } from "./db";
 import {
   ListingData,
   handle,
@@ -9,7 +9,9 @@ import {
   readMatchUserFromCollection,
   isExistingUser,
   UserInfo,
-  getDocsFromCollection
+  getDocsFromCollection,
+  ListingTypeData,
+  readFieldFromDoc,
 } from "./utils";
 import {learning, interests} from "./utils";
 
@@ -23,7 +25,7 @@ export const userPost = async (request: any, response: any): Promise<any> => {
     if (!uid) {
       throw new Error("user uid is manadate field");
     }
-    const [data, err] = await handle(addDocToCollection("users", uid, reqObj));
+    const [data, err] = await handle(addDocToCollection("users", reqObj, uid));
     if (data) {
       logger.info(`Data for user : ${uid}`, data);
       return response.status(200).json(reqObj);
@@ -99,6 +101,17 @@ export const userDelete = async (request: any, response: any): Promise<any> => {
   return response.status(500).send(errObj);
 };
 
+const handleLikedUserRecord = async (collectionName: string, userId: string) => {
+  await deleteFieldFromDoc(collectionName, "likes", userId);
+  const userIdData = await readDocFromCollection("users", userId);
+  const docData: ListingTypeData = {
+    [userId]: {
+      ...userIdData,
+    },
+  };
+  await addDocToCollection(collectionName, docData, "matches");
+};
+
 export const listingTypePost =
   (listingType: string) =>
   async (request: any, response: any): Promise<any> => {
@@ -106,9 +119,11 @@ export const listingTypePost =
     try {
       const reqObj = request.body;
       const { userId } = request.params;
-      const { uid } = reqObj;
+      const { selectedUser, invitationInfo = {} } = reqObj;
+      const { uid: selectedUserId } = selectedUser;
+      let isAMatch = false;
 
-      if (!userId || !uid) {
+      if (!userId || !selectedUserId) {
         throw new Error("userId and Liked userId are manadate field");
       }
 
@@ -116,19 +131,31 @@ export const listingTypePost =
         throw new Error("Invitation info is mandate for invites");
       }
 
+      if (listingType === "likes") {
+        const collectionName = `users/${selectedUserId}/listing`;
+        const [res] = await handle(readFieldFromDoc(collectionName, "likes", userId));
+        isAMatch = res;
+        logger.info("isAMatch", isAMatch);
+        listingType = isAMatch ? "matches" : listingType;
+        isAMatch && (await handleLikedUserRecord(collectionName, userId));
+      }
+
       const collectionName = `users/${userId}/listing`;
 
-      const docData: ListingData = {
-        [uid]: {
-          ...reqObj,
-        },
+      const selectedData = {
+        ...selectedUser,
+        invitationInfo,
       };
 
-      const [data, err] = await handle(addDocToCollection(collectionName, listingType, docData));
+      const docData: ListingTypeData = {
+        [selectedUserId]: selectedData,
+      };
+
+      const [data, err] = await handle(addDocToCollection(collectionName, docData, listingType));
 
       if (data) {
         logger.info("Data: ", data);
-        return response.status(200).json(reqObj);
+        return response.status(200).json({ res: selectedData, isAMatch });
       }
       logger.info("Error: ", err);
       errObj.err = err;
@@ -170,6 +197,35 @@ export const listingTypeGet =
     return response.status(500).send(errObj);
   };
 
+export const listingGet = async (request: any, response: any): Promise<any> => {
+  const errObj = { error: "", err: {} };
+  try {
+    const { userId } = request.params;
+    if (!userId) {
+      throw new Error("userId is a manadate field");
+    }
+    const [data, err] = await handle(getDocsFromCollection(`users/${userId}/listing`));
+    if (data) {
+      logger.info("Data1: ", data);
+      const dataList: ListingData = {};
+      data.forEach((doc: any) => {
+        const dataObj = doc.data();
+        logger.info("dataObj: ", dataObj, dataObj.id);
+        dataList[doc.id] = dataObj;
+      });
+      logger.info("Data: ", dataList);
+      return response.status(200).json(dataList);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `Cannot fetch learnings`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
+  }
+  return response.status(500).send(errObj);
+};
+
 export const listingTypeDelete =
   (listingType: string) =>
   async (request: any, response: any): Promise<any> => {
@@ -200,12 +256,13 @@ export const listingTypeDelete =
     return response.status(500).send(errObj);
   };
 
-export const matchMakingGet = async (request: any, response: any): Promise<any> => {
+export const matchMakingPost = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
-    const { uid } = request.query;
+    const reqObj = request.body;
+    const { uid } = reqObj;
 
-    const [data, err] = await handle(readMatchUserFromCollection("users", request.query));
+    const [data, err] = await handle(readMatchUserFromCollection("users", reqObj));
 
     if (data) {
       logger.info(`user ${uid} has below matches`, data);
@@ -225,24 +282,23 @@ export const matchMakingGet = async (request: any, response: any): Promise<any> 
 export const learningsGet = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
-      const [data, err] = await handle(getDocsFromCollection("learning"));
-      if (data) {
-          const dataList: learning[] = [];
-          data.forEach((doc: any) => {
-              const dataObj = doc.data();
-              dataObj["id"] = doc.id;
-              dataList.push(dataObj);
-          });
-          logger.info("Data: ", dataList);
-          return response.status(200).json(dataList);
-      }
-      logger.info("Error: ", err);
-      errObj.err = err;
-      errObj.error = `Cannot fetch learnings`;
-  }
-  catch (err) {
-      errObj.error = "Service Request error";
-      errObj.err = { message: (err as Error).message };
+    const [data, err] = await handle(getDocsFromCollection("learning"));
+    if (data) {
+      const dataList: learning[] = [];
+      data.forEach((doc: any) => {
+        const dataObj = doc.data();
+        dataObj["id"] = doc.id;
+        dataList.push(dataObj);
+      });
+      logger.info("Data: ", dataList);
+      return response.status(200).json(dataList);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `Cannot fetch learnings`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
   }
   return response.status(500).send(errObj);
 };
@@ -274,22 +330,51 @@ export const interestsGet = async (request: any, response: any): Promise<any> =>
 export const learningsGetItem = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
-      const learningId = request.params.learningId;
-      if (!learningId) {
-          throw new Error("Learning Id is manadate field");
-      }
-      const [data, err] = await handle(readDocFromCollection("learning", learningId));
-      if (data) {
-          logger.info("Data: ", data);
-          return response.status(200).json(data);
-      }
-      logger.info("Error: ", err);
-      errObj.err = err;
-      errObj.error = `learning ${learningId} doesn't exist`;
+    const learningId = request.params.learningId;
+    if (!learningId) {
+      throw new Error("Learning Id is manadate field");
+    }
+    const [data, err] = await handle(readDocFromCollection("learning", learningId));
+    if (data) {
+      logger.info("Data: ", data);
+      return response.status(200).json(data);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `learning ${learningId} doesn't exist`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
   }
-  catch (err) {
-      errObj.error = "Service Request error";
-      errObj.err = { message: (err as Error).message };
+  return response.status(500).send(errObj);
+};
+
+export const sendEmail = async (request: any, response: any): Promise<any> => {
+  const errObj = { error: "", err: {} };
+  try {
+    const reqObj = request.body;
+    const { toUser, fromUser, message } = reqObj;
+    if (!toUser && message) {
+      throw new Error("toUser anad message are manadate is manadate field");
+    }
+    const mailOptions = {
+      toUser,
+      from: fromUser || useremail,
+      message: message,
+    };
+
+    const [data, err] = await handle(addDocToCollection("mail", mailOptions, null));
+
+    if (data) {
+      logger.info("Data: ", data);
+      return response.status(200).send(data);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `Cannot send email to  ${toUser}`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
   }
   return response.status(500).send(errObj);
 };

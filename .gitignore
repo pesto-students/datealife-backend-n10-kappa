@@ -9,3 +9,4 @@ typings/
 # Node.js dependency directory
 node_modules/
 .DS_Store
+functions/.runtimeconfig.json
