@@ -12,6 +12,7 @@ import {
   learningsGetItem,
   matchMakingPost,
   listingGet,
+  sendEmail,
 } from "./routes";
 
 const app = express();
@@ -46,6 +47,8 @@ app.delete("/user/:userId/invites/:userToBeRemoved", listingTypeDelete("invites"
 app.post("/match-making", matchMakingPost);
 app.get("/learnings", learningsGet);
 app.get("/learnings/:learningId", learningsGetItem);
+
+app.post("/send-email", sendEmail);
 
 // export app to firebase
 export const api = functionsRunWith({

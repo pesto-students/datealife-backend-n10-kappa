@@ -4,6 +4,9 @@ const functions = require("firebase-functions");
 
 admin.initializeApp();
 
+/** defining and destructuring environments config for firebase functions */
+export const { useremail } = functions.config().gmail;
+
 export const db = admin.firestore();
 
 export const { FieldValue } = admin.firestore;

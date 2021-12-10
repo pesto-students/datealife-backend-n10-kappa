@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { firestoreDelete, logger } from "./db";
+import { firestoreDelete, logger, useremail } from "./db";
 import {
   ListingData,
   handle,
@@ -25,7 +25,7 @@ export const userPost = async (request: any, response: any): Promise<any> => {
     if (!uid) {
       throw new Error("user uid is manadate field");
     }
-    const [data, err] = await handle(addDocToCollection("users", uid, reqObj));
+    const [data, err] = await handle(addDocToCollection("users", reqObj, uid));
     if (data) {
       logger.info(`Data for user : ${uid}`, data);
       return response.status(200).json(reqObj);
@@ -109,7 +109,7 @@ const handleLikedUserRecord = async (collectionName: string, userId: string) => 
       ...userIdData,
     },
   };
-  await addDocToCollection(collectionName, "matches", docData);
+  await addDocToCollection(collectionName, docData, "matches");
 };
 
 export const listingTypePost =
@@ -133,8 +133,9 @@ export const listingTypePost =
 
       if (listingType === "likes") {
         const collectionName = `users/${selectedUserId}/listing`;
-        isAMatch = await readFieldFromDoc(collectionName, "likes", userId);
-        logger.log("isAMatch", isAMatch);
+        const [res] = await handle(readFieldFromDoc(collectionName, "likes", userId));
+        isAMatch = res;
+        logger.info("isAMatch", isAMatch);
         listingType = isAMatch ? "matches" : listingType;
         isAMatch && (await handleLikedUserRecord(collectionName, userId));
       }
@@ -150,7 +151,7 @@ export const listingTypePost =
         [selectedUserId]: selectedData,
       };
 
-      const [data, err] = await handle(addDocToCollection(collectionName, listingType, docData));
+      const [data, err] = await handle(addDocToCollection(collectionName, docData, listingType));
 
       if (data) {
         logger.info("Data: ", data);
@@ -317,6 +318,36 @@ export const learningsGetItem = async (request: any, response: any): Promise<any
     logger.info("Error: ", err);
     errObj.err = err;
     errObj.error = `learning ${learningId} doesn't exist`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
+  }
+  return response.status(500).send(errObj);
+};
+
+export const sendEmail = async (request: any, response: any): Promise<any> => {
+  const errObj = { error: "", err: {} };
+  try {
+    const reqObj = request.body;
+    const { toUser, fromUser, message } = reqObj;
+    if (!toUser && message) {
+      throw new Error("toUser anad message are manadate is manadate field");
+    }
+    const mailOptions = {
+      toUser,
+      from: fromUser || useremail,
+      message: message,
+    };
+
+    const [data, err] = await handle(addDocToCollection("mail", mailOptions, null));
+
+    if (data) {
+      logger.info("Data: ", data);
+      return response.status(200).send(data);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `Cannot send email to  ${toUser}`;
   } catch (err) {
     errObj.error = "Service Request error";
     errObj.err = { message: (err as Error).message };

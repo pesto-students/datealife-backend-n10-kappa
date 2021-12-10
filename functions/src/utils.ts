@@ -39,12 +39,24 @@ export interface ListingData {
   [listingType: string]: ListingTypeData;
 }
 
+export interface EmailOptions {
+  to: string;
+  from: string;
+  message: {
+    html: string;
+    subject: string;
+  };
+}
+
 export const addDocToCollection = async (
   collectionName: string,
-  docId: string,
-  data: UserInfo | ListingTypeData
+  data: UserInfo | ListingTypeData | EmailOptions,
+  docId: string | null
 ): Promise<any> => {
-  return await db.collection(collectionName).doc(docId).set(data, { merge: true });
+  if (docId) {
+    return await db.collection(collectionName).doc(docId).set(data, { merge: true });
+  }
+  return await db.collection(collectionName).add(data);
 };
 
 export const readDocFromCollection = async (collectionName: string, docId: string): Promise<any> => {
@@ -60,7 +72,7 @@ export const deleteFieldFromDoc = async (collectionName: string, docId: string, 
 };
 
 export const readFieldFromDoc = async (collectionName: string, docId: string, fieldToRead: string): Promise<boolean> => {
-  const doc = await db.collection(collectionName).doc(docId).get();
+  const doc = await db.collection(collectionName)?.doc(docId)?.get();
   const data = doc.empty ? {} : doc.data();
   return !!data[fieldToRead];
 };
