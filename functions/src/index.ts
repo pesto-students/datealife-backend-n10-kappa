@@ -1,71 +1,61 @@
 const express = require("express");
 const cors = require("cors");
-const functions = require("firebase-functions");
-
-import { addDocToCollection, handle, readDocFromCollection, UserInfo } from "./utils";
+import { functionsRunWith } from "./db";
+import {
+  listingTypePost,
+  listingTypeGet,
+  listingTypeDelete,
+  userDelete,
+  userGet,
+  userPost,
+  learningsGet,
+  learningsGetItem,
+  matchMakingPost,
+  listingGet,
+  sendEmail,
+  interestsGet
+} from "./routes";
 
 const app = express();
-const { logger } = functions;
 
 // cross origin request
 app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.post("/add-user", async (request: any, response: any) => {
-  const errObj = { error: "", err: {} };
-  try {
-    const reqObj = request.body as UserInfo;
-    const { id } = reqObj;
-    logger.info("Request Body", reqObj);
+app.post("/user", userPost);
+app.get("/user/:userId", userGet);
+app.delete("/user/:userId", userDelete);
 
-    if (!id) {
-      throw new Error("user id is manadate field");
-    }
-    const [data, err] = await handle(addDocToCollection("users", id, reqObj));
-    errObj.err = err;
-    errObj.error = "unable to store";
+app.get("/user/:userId/listing", listingGet);
 
-    logger.info("Data: ", data);
+app.get("/user/:userId/likes", listingTypeGet("likes"));
+app.post("/user/:userId/likes", listingTypePost("likes"));
+app.delete("/user/:userId/likes/:userToBeRemoved", listingTypeDelete("likes"));
 
-    if (data) return response.status(200).json(reqObj);
-  } catch (err) {
-    errObj.error = "Service Request error";
-    errObj.err = { message: (err as Error).message };
-  }
+app.get("/user/:userId/dislikes", listingTypeGet("dislikes"));
+app.post("/user/:userId/dislikes", listingTypePost("dislikes"));
+app.delete("/user/:userId/dislikes/:userToBeRemoved", listingTypeDelete("dislikes"));
 
-  return response.status(500).send(errObj);
-});
+app.get("/user/:userId/matches", listingTypeGet("matches"));
+app.post("/user/:userId/matches", listingTypePost("matches"));
+app.delete("/user/:userId/matches/:userToBeRemoved", listingTypeDelete("matches"));
 
-app.get("/user/:userId", async (request: any, response: any) => {
-  const errObj = { error: "", err: {} };
-  try {
-    const userId = request.params.userId;
+app.get("/user/:userId/ivites", listingTypeGet("invites"));
+app.post("/user/:userId/invites", listingTypePost("invites"));
+app.delete("/user/:userId/invites/:userToBeRemoved", listingTypeDelete("invites"));
 
-    if (!userId) {
-      throw new Error("userId is manadate field");
-    }
-    const [data, err] = await handle(readDocFromCollection("users", userId));
-    errObj.err = err;
-    errObj.error = "user doesn't exist";
+app.post("/match-making", matchMakingPost);
+app.get("/learnings", learningsGet);
+app.get("/learnings/:learningId", learningsGetItem);
+app.get("/interests", interestsGet);
 
-    logger.info("Data: ", data);
-
-    if (data) return response.status(200).json(data);
-  } catch (err) {
-    errObj.error = "Service Request error";
-    errObj.err = { message: (err as Error).message };
-  }
-
-  return response.status(500).send(errObj);
-});
+app.post("/send-email", sendEmail);
 
 // export app to firebase
-export const api = functions
-  .runWith({
-    // Ensure the function has enough memory and time
-    // to process large files
-    timeoutSeconds: 300,
-    memory: "1GB",
-  })
-  .https.onRequest(app);
+export const api = functionsRunWith({
+  // Ensure the function has enough memory and time
+  // to process large files
+  timeoutSeconds: 300,
+  memory: "1GB",
+}).https.onRequest(app);
