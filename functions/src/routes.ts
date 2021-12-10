@@ -13,7 +13,7 @@ import {
   ListingTypeData,
   readFieldFromDoc,
 } from "./utils";
-import {learning, interests} from "./utils";
+import { learning, interests } from "./utils";
 
 export const userPost = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
@@ -262,15 +262,9 @@ export const matchMakingPost = async (request: any, response: any): Promise<any>
     const reqObj = request.body;
     const { uid } = reqObj;
 
-    const [data, err] = await handle(readMatchUserFromCollection("users", reqObj));
-
-    if (data) {
-      logger.info(`user ${uid} has below matches`, data);
-      return response.status(200).json(data);
-    }
-    logger.info("Error: ", err);
-    errObj.err = err;
-    errObj.error = `unable to find matches`;
+    const [data = []] = await handle(readMatchUserFromCollection("users", reqObj));
+    logger.info(`user ${uid} has below matches`, data);
+    return response.status(200).json(data);
   } catch (err) {
     errObj.error = "Service Request error";
     errObj.err = { message: (err as Error).message };
@@ -306,23 +300,18 @@ export const learningsGet = async (request: any, response: any): Promise<any> =>
 export const interestsGet = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
   try {
-      const [data, err] = await handle(getDocsFromCollection("interests"));
-      if (data) {
-          const interestList: interests[] = [];
-          data.forEach((doc: any) => {
-              const dataObj = doc.data();
-              interestList.push(dataObj);
-          });
-          logger.info("Data: ", interestList);
-          return response.status(200).json(interestList);
-      }
-      logger.info("Error: ", err);
-      errObj.err = err;
-      errObj.error = `Cannot fetch learnings`;
-  }
-  catch (err) {
-      errObj.error = "Service Request error";
-      errObj.err = { message: (err as Error).message };
+    const [data, err] = await handle(readDocFromCollection("interests", "interestList"));
+    if (data) {
+      const interestList: interests[] = data.interests;
+      logger.info("Data: ", interestList);
+      return response.status(200).json(interestList);
+    }
+    logger.info("Error: ", err);
+    errObj.err = err;
+    errObj.error = `Cannot fetch interests`;
+  } catch (err) {
+    errObj.error = "Service Request error";
+    errObj.err = { message: (err as Error).message };
   }
   return response.status(500).send(errObj);
 };
