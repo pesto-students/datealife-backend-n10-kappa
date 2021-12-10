@@ -13,6 +13,7 @@ import {
   matchMakingPost,
   listingGet,
   sendEmail,
+  interestsGet
 } from "./routes";
 
 const app = express();
@@ -47,6 +48,7 @@ app.delete("/user/:userId/invites/:userToBeRemoved", listingTypeDelete("invites"
 app.post("/match-making", matchMakingPost);
 app.get("/learnings", learningsGet);
 app.get("/learnings/:learningId", learningsGetItem);
+app.get("/interests", interestsGet);
 
 app.post("/send-email", sendEmail);
 

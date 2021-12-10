@@ -13,7 +13,7 @@ import {
   ListingTypeData,
   readFieldFromDoc,
 } from "./utils";
-import { learning } from "./utils";
+import {learning, interests} from "./utils";
 
 export const userPost = async (request: any, response: any): Promise<any> => {
   const errObj = { error: "", err: {} };
@@ -299,6 +299,30 @@ export const learningsGet = async (request: any, response: any): Promise<any> =>
   } catch (err) {
     errObj.error = "Service Request error";
     errObj.err = { message: (err as Error).message };
+  }
+  return response.status(500).send(errObj);
+};
+
+export const interestsGet = async (request: any, response: any): Promise<any> => {
+  const errObj = { error: "", err: {} };
+  try {
+      const [data, err] = await handle(getDocsFromCollection("interests"));
+      if (data) {
+          const interestList: interests[] = [];
+          data.forEach((doc: any) => {
+              const dataObj = doc.data();
+              interestList.push(dataObj);
+          });
+          logger.info("Data: ", interestList);
+          return response.status(200).json(interestList);
+      }
+      logger.info("Error: ", err);
+      errObj.err = err;
+      errObj.error = `Cannot fetch learnings`;
+  }
+  catch (err) {
+      errObj.error = "Service Request error";
+      errObj.err = { message: (err as Error).message };
   }
   return response.status(500).send(errObj);
 };

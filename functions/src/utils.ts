@@ -20,6 +20,10 @@ export interface learning {
   imgUrl: string;
 }
 
+export interface interests {
+  value: string;
+}
+
 interface InvitationInfo {
   bookingType: string;
   proposedDate: string;
