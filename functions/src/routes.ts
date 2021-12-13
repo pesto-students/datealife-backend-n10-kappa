@@ -347,7 +347,7 @@ export const sendEmail = async (request: any, response: any): Promise<any> => {
       throw new Error("toUser anad message are manadate is manadate field");
     }
     const mailOptions = {
-      toUser,
+      to: toUser,
       from: fromUser || useremail,
       message: message,
     };
