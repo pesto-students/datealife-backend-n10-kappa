@@ -1,39 +1,69 @@
-# Date a Life
+# Date a Life 
 
 Date-A-Life is not merely a dating application it's more than that, it's experiencing a Lifestyle. We provide experiences starting from choosing the right match to catching up in your favorite location restaurants with the best possible offers, along with add-on services such as Grooming tips and services, cab facilities, and even discounts at your favorite food joints. This is a Dating-Lifestyle experience like never before.
 
-## UI Mockups
-[Figma link](https://www.figma.com/file/TNjSUOIFUX3vyhpXnAZzrP/Date-a-life?node-id=0%3A1)
+<br/>
 
-## Link to the App
-[Date A Life](https://date-a-life.web.app/login)
+# Table of Content
+
+1. [Demo](#demo)
+2. [Installation](#installation)
+3. [Technology Stack](#technology-stack)
+4. [Authors](#authors)
+5. [License](#license)
+
+<br/>
+
+# Demo
+
+[Live Demo](https://date-a-life.web.app/login)
 
 ## App Login Page
 ![image](https://user-images.githubusercontent.com/12935725/145683593-22021bca-5e8f-4189-829d-42da487c1433.png)
 
-## Built With
-* [React.js](https://reactjs.org/)
-* [Redux](https://redux.js.org/)
+<br/>
+
+Please Note:
+
+1. We recommend using this app in Google Chrome
+2. Use the app on Laptop/desktop only as of now.
+
+<br/>
+Test Credentials:
+
+- For guest login (use Google)
+  - Email: datealife111@gmail.com
+  - Password: datealife
+
+<br/>
+
+# Installation
+
+- Fork or directly clone this repository to your local machine
+- Use the `yarn` command to install dependencies
+- `cd functions && install`
+- `npm run serve`(Runs the cloud functions in the development mode with emulator.)
+
+<br/>
+
+# Technology Stack
+
+We tried to use a completely modern tech stack while testing out some new technologies that we had never used before. This resulted in a fast, performant, and easily-extensible web app that should be fairly future-proof for the coming next several years. We used:
+
+* [Node JS](https://nodejs.org/en/)
+* [Express JS](https://expressjs.com/)
 * [TypeScript](https://www.typescriptlang.org/)
-* [Material UI](https://mui.com/)
 * [Firebase](https://firebase.google.com/)
-* [Sentry](https://sentry.io/)
-* [CometChat](https://www.cometchat.com/)
 
-## Tech Stack 
-[Tech stack link](https://techieproject.atlassian.net/wiki/spaces/TK/pages/557127)
+<br/>
 
-## PRD
-[PRD Doc link](https://techieproject.atlassian.net/wiki/spaces/TK/pages/196609/Date-A-Life)
+# Authors
 
+- [Anooj Agarwal](https://github.com/anooj-curator)
+- [Vignesh Ramesh](https://github.com/veer-auro)
 
+<br/>
 
-## Run project locally
+# License
 
-In the project directory, you can run:
-
-### `cd functions && install`
-
-### `npm run serve`
-
-Runs the cloud functions in the development mode with emulator.
+[MIT](https://opensource.org/licenses/MIT)
