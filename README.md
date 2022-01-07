@@ -4,7 +4,7 @@ Date-A-Life is not merely a dating application it's more than that, it's experie
 
 <br/>
 
-# Table of Content
+# Table of Contents
 
 1. [Demo](#demo)
 2. [Installation](#installation)
@@ -17,9 +17,6 @@ Date-A-Life is not merely a dating application it's more than that, it's experie
 # Demo
 
 [Live Demo](https://date-a-life.web.app/login)
-
-## App Login Page
-![image](https://user-images.githubusercontent.com/12935725/145683593-22021bca-5e8f-4189-829d-42da487c1433.png)
 
 <br/>
 
